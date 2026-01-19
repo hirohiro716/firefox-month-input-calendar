@@ -254,6 +254,7 @@ const addEventHandler = function() {
             clearButton.remove();
         });
         input.addEventListener("input", () => {
+            appendPopup();
             updateCurrentSelection();
             scrollToCurrentSelection();
         });
