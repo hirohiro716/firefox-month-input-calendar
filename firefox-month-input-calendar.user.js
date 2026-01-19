@@ -33,6 +33,7 @@ const addEventHandler = function() {
         }
         const inputComputedStyle = window.getComputedStyle(input);
         const clearButton = window.document.createElement("div");
+        clearButton.textContent = "×";
         clearButton.setAttribute("id", clearButtonID);
         clearButton.style.position = "fixed";
         clearButton.style.height = inputComputedStyle.getPropertyValue("height");
@@ -44,8 +45,14 @@ const addEventHandler = function() {
         clearButton.style.alignItems = "center";
         clearButton.style.fontSize = inputComputedStyle.getPropertyValue("font-size");
         clearButton.style.cursor = "pointer";
-        clearButton.style.opacity = "0.5";
-        clearButton.textContent = "×";
+        const clearButtonOpacity = "0.5";
+        clearButton.style.opacity = clearButtonOpacity;
+        clearButton.addEventListener("mouseover", () => {
+            clearButton.style.opacity = "1";
+        });
+        clearButton.addEventListener("mouseout", () => {
+            clearButton.style.opacity = clearButtonOpacity;
+        });
         clearButton.addEventListener("mousedown", (event) => {
             event.preventDefault();
             input.value = "";
@@ -54,7 +61,11 @@ const addEventHandler = function() {
         const appendClearButton = () => {
             const domRect = input.getBoundingClientRect();
             clearButton.style.top = parseInt(domRect.y) + "px";
-            clearButton.style.left = "calc(" + parseInt(domRect.x + domRect.width) + "px - 1em)";
+            if (inputComputedStyle.getPropertyValue("text-align") !== "right") {
+                clearButton.style.left = "calc(" + parseInt(domRect.x + domRect.width) + "px - 1em)";
+            } else {
+                clearButton.style.left = "calc(" + parseInt(domRect.x) + "px + 0.5em)";
+            }
             window.document.body.append(clearButton);
         }
         const popup = window.document.createElement("div");
