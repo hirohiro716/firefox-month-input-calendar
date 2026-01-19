@@ -7,11 +7,13 @@
 // @match        https://*/*
 // @icon         https://www.firefox.com/favicon.ico
 // @grant        none
-// @updateURL    https://github.com/hirohiro716/line-chat-style/raw/main/firefox-month-input-calendar.user.js
-// @downloadURL  https://github.com/hirohiro716/line-chat-style/raw/main/firefox-month-input-calendar.user.js
+// @updateURL    https://github.com/hirohiro716/firefox-month-input-calendar/raw/main/firefox-month-input-calendar.user.js
+// @downloadURL  https://github.com/hirohiro716/firefox-month-input-calendar/raw/main/firefox-month-input-calendar.user.js
 // ==/UserScript==
 
-const identifierName = "firefox-month-input-calendar";
+const identifierName = "hirohiro716-firefox-month-input-calendar";
+const yearParagraphClassName = identifierName + "-year";
+const monthParagraphClassName = identifierName + "-month";
 window.addEventListener("scroll", () => {
     const popup = window.document.querySelector('div[data-id="' + identifierName + '"]');
     if (popup) {
@@ -27,6 +29,7 @@ const addEventHandler = function() {
         const popup = window.document.createElement("div");
         popup.setAttribute("data-id", identifierName);
         popup.style.position = "fixed";
+        popup.style.zIndex = "calc(infinity)";
         popup.style.margin = "0";
         popup.style.padding = "0.5em";
         popup.style.border = "1px solid #ccc";
@@ -38,6 +41,9 @@ const addEventHandler = function() {
         popup.style.flexDirection = "row";
         popup.style.gap = "0.5em";
         popup.style.fontSize = window.getComputedStyle(input).getPropertyValue("font-size");
+        popup.addEventListener("mousedown", (event) => {
+            event.preventDefault();
+        });
         const getYearAndMonth = () => {
             const parts = input.value.split(/[^0-9]/);
             const yearAndMonth = [];
@@ -47,6 +53,24 @@ const addEventHandler = function() {
                 yearAndMonth.push(parseInt(parts[1]));
             }
             return yearAndMonth;
+        }
+        const currentYear = (new Date()).getFullYear();
+        const currentMonth = (new Date()).getMonth() + 1;
+        const updateCurrentSelection = () => {
+            for (const p of popup.querySelectorAll("p")) {
+                p.style.backgroundColor = "";
+            }
+            const inputYearAndMonth = getYearAndMonth();
+            const inputYear = isNaN(inputYearAndMonth[0]) === false ? inputYearAndMonth[0] : currentYear;
+            const currentYearElement = popup.querySelector('p[data-year="' + inputYear + '"]');
+            if (currentYearElement !== null) {
+                currentYearElement.style.backgroundColor = "#efefef";
+            }
+            const inputMonth = isNaN(inputYearAndMonth[1]) === false ? inputYearAndMonth[1] : currentMonth;
+            const currentMonthElement = popup.querySelector('p[data-month="' + inputMonth + '"]');
+            if (currentMonthElement !== null) {
+                currentMonthElement.style.backgroundColor = "#efefef";
+            }
         }
         const setYearAndMonth = (newYear, newMonth) => {
             const yearAndMonth = input.value.split(/[^0-9]/);
@@ -65,26 +89,20 @@ const addEventHandler = function() {
                 value += String(month).padStart(2, '0');
             }
             input.value = value;
+            updateCurrentSelection();
         }
-        const currentYear = (new Date()).getFullYear();
-        const currentMonth = (new Date()).getMonth() + 1;
-        const updateCurrentSelection = () => {
-            for (const p of popup.querySelectorAll("p")) {
-                p.style.backgroundColor = "";
+        const scrollToCurrentSelection = () => {
+            const inputYearAndMonth = getYearAndMonth();
+            const inputYear = isNaN(inputYearAndMonth[0]) === false ? inputYearAndMonth[0] : currentYear;
+            const currentYearElement = popup.querySelector('p[data-year="' + inputYear + '"]');
+            if (currentYearElement !== null) {
+                currentYearElement.scrollIntoView();
             }
-            const yearAndMonth = getYearAndMonth();
-            let currentYearElement = popup.querySelector('p[data-year="' + yearAndMonth[0] + '"]');
-            if (currentYearElement === null) {
-                currentYearElement = popup.querySelector('p[data-year="' + currentYear + '"]');
+            const inputMonth = isNaN(inputYearAndMonth[1]) === false ? inputYearAndMonth[1] : currentMonth;
+            const currentMonthElement = popup.querySelector('p[data-month="' + inputMonth + '"]');
+            if (currentMonthElement !== null) {
+                currentMonthElement.scrollIntoView();
             }
-            currentYearElement.style.backgroundColor = "#efefef";
-            currentYearElement.scrollIntoView();
-            let currentMonthElement = popup.querySelector('p[data-month="' + yearAndMonth[1] + '"]');
-            if (currentMonthElement === null) {
-                currentMonthElement = popup.querySelector('p[data-month="' + currentMonth + '"]');
-            }
-            currentMonthElement.style.backgroundColor = "#efefef";
-            currentMonthElement.scrollIntoView();
         }
         const yearsDiv = window.document.createElement("div");
         yearsDiv.style.maxHeight = "16em";
@@ -96,30 +114,35 @@ const addEventHandler = function() {
         yearsDiv.style.overflow = "scroll";
         yearsDiv.style.fontSize = "inherit";
         popup.append(yearsDiv);
-        for (let year = currentYear - 10; year <= currentYear + 10; year++) {
-            const p = window.document.createElement("p");
-            p.textContent = year + "年";
-            p.style.width = "100%";
-            p.style.margin = "0";
-            p.style.padding = "0";
-            p.style.lineHeight = "1em";
-            p.style.fontSize = "inherit";
-            p.style.cursor = "pointer";
-            p.setAttribute("data-year", year);
-            p.addEventListener("mousedown", () => {
-                setTimeout(() => {
-                    input.focus();
+        const updateYears = () => {
+            for (const p of popup.querySelectorAll("p." + yearParagraphClassName)) {
+                p.remove();
+            }
+            const inputYearAndMonth = getYearAndMonth();
+            const inputYear = isNaN(inputYearAndMonth[0]) === false ? inputYearAndMonth[0] : currentYear;
+            for (let year = inputYear - 10; year <= inputYear + 10; year++) {
+                const p = window.document.createElement("p");
+                p.textContent = year + "年";
+                p.className = yearParagraphClassName;
+                p.style.width = "100%";
+                p.style.margin = "0";
+                p.style.padding = "0";
+                p.style.lineHeight = "1em";
+                p.style.fontSize = "inherit";
+                p.style.cursor = "pointer";
+                p.setAttribute("data-year", year);
+                p.addEventListener("mousedown", (event) => {
+                    event.preventDefault()
                     setYearAndMonth(year, null);
-                    updateCurrentSelection();
-                }, 100);
-            });
-            p.addEventListener("mouseover", () => {
-                p.style.opacity = "0.7";
-            });
-            p.addEventListener("mouseout", () => {
-                p.style.opacity = "1";
-            });
-            yearsDiv.append(p);
+                });
+                p.addEventListener("mouseover", () => {
+                    p.style.opacity = "0.7";
+                });
+                p.addEventListener("mouseout", () => {
+                    p.style.opacity = "1";
+                });
+                yearsDiv.append(p);
+            }
         }
         const monthsDiv = window.document.createElement("div");
         monthsDiv.style.maxHeight = "16em";
@@ -133,6 +156,7 @@ const addEventHandler = function() {
         for (let month = 1; month <= 12; month++) {
             const p = window.document.createElement("p");
             p.textContent = month + "月";
+            p.className = monthParagraphClassName;
             p.style.width = "100%";
             p.style.margin = "0";
             p.style.padding = "0";
@@ -141,12 +165,9 @@ const addEventHandler = function() {
             p.style.fontSize = "inherit";
             p.style.cursor = "pointer";
             p.setAttribute("data-month", month);
-            p.addEventListener("mousedown", () => {
-                setTimeout(() => {
-                    input.focus();
-                    setYearAndMonth(null, month);
-                    updateCurrentSelection();
-                }, 100);
+            p.addEventListener("mousedown", (event) => {
+                event.preventDefault()
+                setYearAndMonth(null, month);
             });
             p.addEventListener("mouseover", () => {
                 p.style.opacity = "0.7";
@@ -164,8 +185,10 @@ const addEventHandler = function() {
                 popup.style.top = "calc(" + parseInt(domRect.y) + "px - 17em - 0.3em)";
             }
             popup.style.left = domRect.x + "px";
+            updateYears();
             window.document.body.append(popup);
             updateCurrentSelection();
+            scrollToCurrentSelection();
         }
         input.addEventListener("focus", () => {
             appendPopup();
@@ -177,6 +200,37 @@ const addEventHandler = function() {
         });
         input.addEventListener("blur", () => {
             popup.remove();
+        });
+        input.addEventListener("input", () => {
+            updateCurrentSelection();
+            scrollToCurrentSelection();
+        });
+        input.addEventListener("keydown", (event) => {
+            const inputYearAndMonth = getYearAndMonth();
+            const inputYear = isNaN(inputYearAndMonth[0]) === false ? inputYearAndMonth[0] : currentYear;
+            const inputMonth = isNaN(inputYearAndMonth[1]) === false ? inputYearAndMonth[1] : currentMonth;
+            switch (event.key) {
+                case "Enter":
+                case "Escape":
+                    popup.remove();
+                    break;
+                case "ArrowUp":
+                    if (inputMonth > 1) {
+                        setYearAndMonth(inputYear, inputMonth - 1);
+                    } else {
+                        setYearAndMonth(inputYear - 1, 12);
+                    }
+                    scrollToCurrentSelection();
+                    break;
+                case "ArrowDown":
+                    if (inputMonth < 12) {
+                        setYearAndMonth(inputYear, inputMonth + 1);
+                    } else {
+                        setYearAndMonth(inputYear + 1, 1);
+                    }
+                    scrollToCurrentSelection();
+                    break;
+            }
         });
         input.setAttribute(identifierName, identifierName);
     }
