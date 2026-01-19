@@ -11,23 +11,54 @@
 // @downloadURL  https://github.com/hirohiro716/firefox-month-input-calendar/raw/main/firefox-month-input-calendar.user.js
 // ==/UserScript==
 
-const identifierName = "hirohiro716-firefox-month-input-calendar";
-const yearParagraphClassName = identifierName + "-year";
-const monthParagraphClassName = identifierName + "-month";
+const popupID = "hirohiro716-firefox-month-input-calendar-popup";
+const clearButtonID = "hirohiro716-firefox-month-input-calendar-clear-button";
+const yearParagraphClassName = popupID + "-year";
+const monthParagraphClassName = popupID + "-month";
 window.addEventListener("scroll", () => {
-    const popup = window.document.querySelector('div[data-id="' + identifierName + '"]');
+    const popup = window.document.querySelector("div#" + popupID);
     if (popup) {
         popup.remove();
+    }
+    const clearButton = window.document.querySelector("div#" + clearButtonID);
+    if (clearButton) {
+        clearButton.remove();
     }
 });
 const addEventHandler = function() {
     const inputs = window.document.querySelectorAll('input[type="month"]');
     for (const input of inputs) {
-        if (input.getAttribute(identifierName) !== null) {
+        if (input.getAttribute(popupID) !== null) {
             continue;
         }
+        const inputComputedStyle = window.getComputedStyle(input);
+        const clearButton = window.document.createElement("div");
+        clearButton.setAttribute("id", clearButtonID);
+        clearButton.style.position = "fixed";
+        clearButton.style.height = inputComputedStyle.getPropertyValue("height");
+        clearButton.style.zIndex = "calc(infinity)";
+        clearButton.style.margin = "0";
+        clearButton.style.padding = "0";
+        clearButton.style.backgroundColor = "rgba(0,0,0,0)";
+        clearButton.style.display = "flex";
+        clearButton.style.alignItems = "center";
+        clearButton.style.fontSize = inputComputedStyle.getPropertyValue("font-size");
+        clearButton.style.cursor = "pointer";
+        clearButton.style.opacity = "0.5";
+        clearButton.textContent = "×";
+        clearButton.addEventListener("mousedown", (event) => {
+            event.preventDefault();
+            input.value = "";
+            updateCurrentSelection();
+        });
+        const appendClearButton = () => {
+            const domRect = input.getBoundingClientRect();
+            clearButton.style.top = parseInt(domRect.y) + "px";
+            clearButton.style.left = "calc(" + parseInt(domRect.x + domRect.width) + "px - 1em)";
+            window.document.body.append(clearButton);
+        }
         const popup = window.document.createElement("div");
-        popup.setAttribute("data-id", identifierName);
+        popup.setAttribute("id", popupID);
         popup.style.position = "fixed";
         popup.style.zIndex = "calc(infinity)";
         popup.style.margin = "0";
@@ -36,11 +67,10 @@ const addEventHandler = function() {
         popup.style.borderRadius = "0.3em";
         popup.style.backgroundColor = "#fff";
         popup.style.boxShadow = "0.2em 0 0.5em 0 rgba(0, 0, 0, 0.2)";
-        popup.style.border = "1px solid #ccc";
         popup.style.display = "flex";
         popup.style.flexDirection = "row";
         popup.style.gap = "0.5em";
-        popup.style.fontSize = window.getComputedStyle(input).getPropertyValue("font-size");
+        popup.style.fontSize = inputComputedStyle.getPropertyValue("font-size");
         popup.addEventListener("mousedown", (event) => {
             event.preventDefault();
         });
@@ -190,16 +220,27 @@ const addEventHandler = function() {
             updateCurrentSelection();
             scrollToCurrentSelection();
         }
-        input.addEventListener("focus", () => {
-            appendPopup();
-        });
         input.addEventListener("click", () => {
-            if (window.document.querySelector('div[data-id="' + identifierName + '"]') === null) {
+            const popupElement = window.document.querySelector("div#" + popupID);
+            if (popupElement === null) {
                 appendPopup();
+            } else {
+                popupElement.remove();
+            }
+            const clearButtonElement = window.document.querySelector("div#" + clearButtonID);
+            if (clearButtonElement === null) {
+                appendClearButton();
+            }
+        });
+        input.addEventListener("focus", () => {
+            const clearButtonElement = window.document.querySelector("div#" + clearButtonID);
+            if (clearButtonElement === null) {
+                appendClearButton();
             }
         });
         input.addEventListener("blur", () => {
             popup.remove();
+            clearButton.remove();
         });
         input.addEventListener("input", () => {
             updateCurrentSelection();
@@ -232,7 +273,7 @@ const addEventHandler = function() {
                     break;
             }
         });
-        input.setAttribute(identifierName, identifierName);
+        input.setAttribute(popupID, popupID);
     }
 };
 setInterval(addEventHandler, 1000);
