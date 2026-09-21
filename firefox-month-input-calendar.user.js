@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Firefox Month input Calendar
 // @namespace    https://github.com/hirohiro716/
-// @version      1.0
+// @version      1.1
 // @description  Add a calendar to FireFox's month input.
 // @author       hiro
 // @match        https://*/*
@@ -124,7 +124,7 @@ const addEventHandler = function() {
             if (newMonth) {
                 month = newMonth;
             }
-            let value = year;
+            let value = year ? year : currentYear;
             value += "-";
             if (month && isNaN(month) === false) {
                 value += String(month).padStart(2, '0');
